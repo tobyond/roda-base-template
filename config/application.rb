@@ -33,6 +33,10 @@ class Application
       env == 'production'
     end
 
+    def root
+      @root ||= File.expand_path('..', __dir__)
+    end
+
     private
 
     def setup_logger
@@ -44,14 +48,21 @@ class Application
       @loader = Zeitwerk::Loader.new
 
       # Configure paths
-      loader.push_dir('app/models')
-      loader.push_dir('app/services')
-      loader.push_dir('app/views', namespace: Views)
+      loader.push_dir(File.join(root, 'app/models'))
+      loader.push_dir(File.join(root, 'app/services'))
+      loader.push_dir(File.join(root, 'app/views'), namespace: Views)
 
       # Enable reloading in development
       if development?
+        require 'listen'
         loader.enable_reloading
         loader.logger = logger
+
+        Listen.to(
+          'app/models',
+          'app/services',
+          'app/views'
+        ) { loader.reload }.start
       end
 
       loader.setup

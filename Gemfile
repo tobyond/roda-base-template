@@ -16,6 +16,7 @@ gem 'zeitwerk'
 
 group :development do
   gem 'sequel-annotate'
+  gem 'listen'
 end
 
 group :test do

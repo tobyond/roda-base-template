@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "build": "esbuild app/assets/javascript/*.* --bundle --sourcemap --format=esm --target=safari11 --outdir=public/",
+    "build:css": "tailwindcss -i ./app/assets/css/application.css -o ./public/application.css --minify"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "esbuild": "^0.24.2",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^4.0.0"
+  }
+}

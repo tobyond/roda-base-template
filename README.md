@@ -6,6 +6,7 @@ A modern Roda application template with Sequel, PostgreSQL, and Zeitwerk integra
 
 - Roda web framework
 - Sequel ORM with PostgreSQL
+- Phlex for views
 - Esbuild with tailwindcss
 - Zeitwerk autoloading
 - Database migrations and rake tasks
@@ -15,14 +16,16 @@ A modern Roda application template with Sequel, PostgreSQL, and Zeitwerk integra
 - Automatic code reloading in development
 - Model annotation support
 
+Configured for postgres, but you can use whatever you want.
+
 ## Directory Structure
 
 ```
 .
 ├── app/
 │   ├── models/
-│   ├── services/
 │   ├── routes/
+│   ├── services/
 │   └── views/
 ├── config/
 │   ├── migrations/
@@ -31,6 +34,8 @@ A modern Roda application template with Sequel, PostgreSQL, and Zeitwerk integra
 │   ├── database.yml
 │   └── seeds.rb
 ├── test/
+│   ├── models/
+│   ├── routes/
 │   └── test_helper.rb
 ├── .env.rb
 ├── Gemfile
@@ -47,21 +52,25 @@ A modern Roda application template with Sequel, PostgreSQL, and Zeitwerk integra
    npm install
    ```
 3. Configure your database in `config/database.yml`
-4. Set up your environment variables in `.env.rb`
-5. Create your databases:
+4. Generate your secrets, a different one for each env:
+   ```bash
+   ruby -e "require 'securerandom'; puts SecureRandom.hex(64)"
+   ```
+5. Set up your environment variables in `.env.rb`
+6. Create your databases:
    ```bash
    rake db:create
    rake db:migrate
    ```
-6. Start your server:
+7. Start your server:
    ```bash
    foreman start
    ```
-7. Visit localhost:9292
-8. Customize your app:
-   a. replace the instances of Template with the name of your app.
-   b. update the database config with your credentials.
-   c. save to your git repo
+8. Visit localhost:9292
+9. Customize your app:
+   - replace the instances of Template with the name of your app.
+   - update the database config with your credentials.
+   - save to your git repo
 
 
 ## Database Configuration

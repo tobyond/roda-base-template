@@ -17,12 +17,16 @@ A modern Roda application template with Sequel, PostgreSQL, and Zeitwerk integra
 - Model annotation support
 
 Configured for postgres, but you can use whatever you want.
+Out of the box it has rudimentary authentication, although `rodauth` gem is preferable.
 
 ## Directory Structure
 
 ```
 .
 ├── app/
+│   ├── assets/
+│       ├── css/
+│       └── javascript/
 │   ├── models/
 │   ├── routes/
 │   ├── services/

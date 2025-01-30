@@ -15,15 +15,16 @@ class Template
           r.redirect '/login'
         end
       end
+    end
+  end
 
-      # DELETE /sessions (destroy)
-      r.delete do
-        require_authentication
+  hash_branch 'logout' do |r|
+    r.get do
+      require_authentication
 
-        if current_user
-          terminate_session
-          r.redirect '/sessions/new'
-        end
+      if current_user
+        terminate_session
+        r.redirect '/login'
       end
     end
   end

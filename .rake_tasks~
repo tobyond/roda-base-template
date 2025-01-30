@@ -22,4 +22,5 @@ db:test:force_reset
 db:test:reset
 db:test:up
 default
+generate:migration[name]
 test

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-class Template
-  hash_branch 'sessions' do |r|
+class SessionsRoutes
+  MyApp.hash_branch 'sessions' do |r|
     r.is do
       # POST /sessions (create)
       r.post do
@@ -18,7 +18,7 @@ class Template
     end
   end
 
-  hash_branch 'logout' do |r|
+  MyApp.hash_branch 'logout' do |r|
     r.get do
       require_authentication
 
@@ -29,7 +29,7 @@ class Template
     end
   end
 
-  hash_branch 'login' do |r|
+  MyApp.hash_branch 'login' do |r|
     r.get do
       set_current_user
 

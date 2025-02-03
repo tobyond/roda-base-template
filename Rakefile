@@ -216,6 +216,30 @@ task :console do
   IRB.start(__FILE__)
 end
 
+desc 'Display all defined routes'
+task :routes do
+  # Get all ruby files in routes directory
+  route_files = Dir['app/routes/**/*.rb']
+
+  # Process each file
+  route_files.each do |file|
+    puts "\n#{file}:"
+
+    # Read and parse the file content
+    content = File.read(file)
+
+    # Find hash_branch definitions
+    content.scan(/hash_branch ["']([^"']+)["']/) do |branch|
+      puts "  /#{branch[0]}"
+
+      # Optionally: scan for nested routes (r.get, r.post etc)
+      content.scan(/r\.(get|post|put|delete|patch) ["']([^"']+)["']/) do |method, path|
+        puts "    #{method.upcase.ljust(6)} /#{branch[0]}#{path}"
+      end
+    end
+  end
+end
+
 require 'rake/testtask'
 
 Rake::TestTask.new do |t|

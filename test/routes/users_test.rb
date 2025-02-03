@@ -7,7 +7,7 @@ class UsersTest < Minitest::Test
   include Rack::Test::Methods
 
   def app
-    Template.freeze.app
+    MyApp.freeze.app
   end
 
   def test_signup_page_loads

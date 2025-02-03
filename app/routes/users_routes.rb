@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-class Template
-  hash_branch 'users' do |r|
+class UsersRoutes
+  MyApp.hash_branch 'users' do |r|
     r.is do
       # POST /users (create)
       r.post do
@@ -19,7 +19,7 @@ class Template
     end
   end
 
-  hash_branch 'signup' do |r|
+  MyApp.hash_branch 'signup' do |r|
     r.get do
       set_current_user
 

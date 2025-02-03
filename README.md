@@ -72,7 +72,7 @@ Out of the box it has rudimentary authentication, although `rodauth` gem is pref
    ```
 8. Visit localhost:9292
 9. Customize your app:
-   - replace the instances of Template with the name of your app.
+   - replace the instances of MyApp with the name of your app.
    - update the database config with your credentials.
    - save to your git repo
 
@@ -155,6 +155,8 @@ rake db:production:up
 rake db:reset                   # Reset database (migrate down, up, and seed)
 rake db:force_reset            # Force reset database (skips missing migrations)
 rake db:seed                    # Load seed data
+
+rake routes                    # rudimentary routes lookin from routes files
 ```
 
 ### Migration Generator

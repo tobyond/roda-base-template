@@ -5,7 +5,7 @@ class SessionsTest < Minitest::Test
   include Rack::Test::Methods
 
   def app
-    Template.freeze.app
+    MyApp.freeze.app
   end
 
   def test_login_page_loads

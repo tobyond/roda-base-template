@@ -7,7 +7,7 @@ Dir["plugins/**/*.rb"].each do |plugin_file|
   require_relative plugin_file
 end
 
-class Template < Roda
+class MyApp < Roda
   opts[:check_dynamic_arity] = false
   opts[:check_arity] = :warn
 
@@ -41,7 +41,7 @@ class Template < Roda
   plugin :common_logger, logger
 
   plugin :sessions,
-    key: '_Template.session',
+    key: '_MyApp.session',
     secret: ENV.send((ENV['RACK_ENV'] == 'development' ? :[] : :delete), 'SESSION_SECRET')
 
   plugin :authentication

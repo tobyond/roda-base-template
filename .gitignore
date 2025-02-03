@@ -1,3 +1,4 @@
 /.env.rb
 /coverage
 /node_modules
+/public

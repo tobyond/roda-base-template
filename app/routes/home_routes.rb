@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-class Template
-  hash_branch 'home' do |r|
+class HomeRoutes
+  MyApp.hash_branch 'home' do |r|
     r.is do
       require_authentication
 

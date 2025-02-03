@@ -55,11 +55,11 @@ Out of the box this template has rudimentary authentication (similar to rails au
    npm install
    ```
 3. Configure your database in `config/database.yml`
-4. Generate your secrets, a different one for each env:
+4. Generate your `ENV['SESSION_SECRET']` in `.env.rb`, a different one for each env:
    ```bash
-   ruby -e "require 'securerandom'; puts SecureRandom.hex(64)"
+   ruby -rsecurerandom -e 'puts SecureRandom.base64(64).inspect'
    ```
-5. Set up your environment variables in `.env.rb`
+5. Set up your database environment variables in `.env.rb`
 6. Create your databases:
    ```bash
    rake db:create

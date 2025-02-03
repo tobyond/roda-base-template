@@ -49,7 +49,6 @@ class Application
 
       # Configure paths
       loader.push_dir(File.join(root, 'app/models'))
-      loader.push_dir(File.join(root, 'app/services'))
       loader.push_dir(File.join(root, 'app/views'), namespace: Views)
 
       # Enable reloading in development
@@ -60,7 +59,6 @@ class Application
 
         Listen.to(
           'app/models',
-          'app/services',
           'app/views'
         ) { loader.reload }.start
       end

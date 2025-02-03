@@ -1,6 +1,6 @@
 # Roda Application Template
 
-A modern Roda application template with Sequel, PostgreSQL, and Zeitwerk integration.
+A modern pure ruby, [Roda](https://github.com/jeremyevans/roda) application template with [Phlex](https://github.com/phlex-ruby/phlex) for views, [Sequel](https://github.com/jeremyevans/sequel) ORM, [Esbuild](https://esbuild.github.io/) for javascript and CSS bundling, [Tailwindcss](https://tailwindcss.com/), and [Zeitwerk](https://github.com/fxn/zeitwerk) integration.
 
 ## Features
 
@@ -17,7 +17,7 @@ A modern Roda application template with Sequel, PostgreSQL, and Zeitwerk integra
 - Model annotation support
 
 Configured for postgres, but you can use whatever you want.
-Out of the box it has rudimentary authentication, although `rodauth` gem is preferable.
+Out of the box this template has rudimentary authentication (similar to rails authentication generator), although upgrading [rodauth](https://rodauth.jeremyevans.net/) gem is preferable.
 
 ## Directory Structure
 
@@ -29,7 +29,6 @@ Out of the box it has rudimentary authentication, although `rodauth` gem is pref
 │       └── javascript/
 │   ├── models/
 │   ├── routes/
-│   ├── services/
 │   └── views/
 ├── config/
 │   ├── migrations/
@@ -191,7 +190,6 @@ rake test                      # Run all tests
 The application uses Zeitwerk for autoloading with reloading enabled in development. The following directories are autoloaded:
 
 - `app/models`
-- `app/services`
 - `app/views`
 
 Configuration in `config/application.rb`:
@@ -201,7 +199,6 @@ def setup_zeitwerk
   @loader = Zeitwerk::Loader.new
   
   loader.push_dir(File.join(Application.root, 'app/models'))
-  loader.push_dir(File.join(Application.root, 'app/services'))
   loader.push_dir(File.join(Application.root, 'app/views'), namespace: Views)
   
   if development?
@@ -211,7 +208,6 @@ def setup_zeitwerk
     
     Listen.to(
       'app/models',
-      'app/services',
       'app/views'
     ) { loader.reload }.start
   end
@@ -229,7 +225,7 @@ rake console
 ```
 
 In the console, you can:
-- Access all your models and services
+- Access all your models
 - Execute database queries
 - Reload code changes with `reload!`
 - See SQL queries with custom formatting
@@ -257,6 +253,10 @@ For production:
 - Set appropriate environment variables
 - Ensure `RACK_ENV=production`
 - Configure database credentials securely
+
+## Deployment
+
+[Dokku](https://dokku.com/) is a fabulous option to deploy to a server.
 
 ## Contributing
 

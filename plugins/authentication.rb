@@ -4,16 +4,26 @@ class Roda
   module RodaPlugins
     module Authentication
       module InstanceMethods
+        def current_user
+          request.current_user # Make current_user accessible globally in routes
+        end
+
+        def current_session
+          request.current_session # Make current_session accessible globally in routes
+        end
+      end
+
+      module RequestMethods
         attr_reader :current_session, :current_user
 
-        private
-
         def authenticated?
-          current_session.present?
+          current_session
         end
 
         def require_authentication
-          resume_session || request_authentication
+          session_result = resume_session
+          request_authentication unless session_result
+          session_result
         end
 
         def resume_session
@@ -21,7 +31,7 @@ class Roda
             set_current_session(session)
           end
         end
-        alias_method :set_current_user, :resume_session
+        alias set_current_user resume_session
 
         def find_session_by_cookie
           if (token = session['session_token'])
@@ -30,8 +40,9 @@ class Roda
         end
 
         def request_authentication
-          session[:return_to_after_authenticating] = request.url
-          response.redirect '/login'
+          session[:return_to_after_authenticating] = url
+          response.redirect('/login')
+          halt
         end
 
         def after_authentication_url
@@ -42,13 +53,13 @@ class Roda
           @current_user = user
           new_session = Session.create(
             user_id: user.id,
-            user_agent: request.user_agent,
-            ip_address: request.ip
+            user_agent: user_agent,
+            ip_address: ip
           )
           set_current_session(new_session)
         end
 
-        def set_current_session(session_record)
+        def set_current_session(session_record) # rubocop:disable Naming/AccessorMethodName
           @current_session = session_record
           @current_user = User[session_record.user_id]
           session['session_token'] = session_record.token

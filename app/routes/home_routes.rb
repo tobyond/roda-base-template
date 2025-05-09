@@ -3,9 +3,9 @@
 class HomeRoutes
   MyApp.hash_branch 'home' do |r|
     r.is do
-      require_authentication
+      r.require_authentication
 
-      Views::Home::Index.call
+      Home::Index.call
     end
   end
 end

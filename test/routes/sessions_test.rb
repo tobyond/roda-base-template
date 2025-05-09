@@ -36,12 +36,10 @@ class SessionsTest < Minitest::Test
     )
 
     get "/login"
-    csrf_token = extract_csrf_token(last_response.body)
 
     assert_equal 0, Session.count
 
     post "/sessions", {
-      _csrf: csrf_token,
       email: "test@example.com",
       password: "password123"
     }
@@ -59,12 +57,10 @@ class SessionsTest < Minitest::Test
     )
 
     get "/login"
-    csrf_token = extract_csrf_token(last_response.body)
 
     assert_equal 0, Session.count
 
     post "/sessions", {
-      _csrf: csrf_token,
       email: "invalid@example.com",
       password: "wrongpass"
     }

@@ -17,13 +17,11 @@ class UsersTest < Minitest::Test
 
   def test_successful_signup
     get '/signup'
-    csrf_token = extract_csrf_token(last_response.body)
 
     assert_equal 0, Session.count
     assert_equal 0, User.count
 
     post '/users', {
-      _csrf: csrf_token,
       username: 'testuser',
       email: 'test@example.com',
       password: 'password123'
@@ -43,13 +41,11 @@ class UsersTest < Minitest::Test
     )
 
     get '/signup'
-    csrf_token = extract_csrf_token(last_response.body)
 
     assert_equal 0, Session.count
     assert_equal 1, User.count
 
     post '/users', {
-      _csrf: csrf_token,
       username: 'testuser',
       email: 'test@example.com',
       password: 'password123'

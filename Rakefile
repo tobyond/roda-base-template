@@ -2,8 +2,92 @@
 
 require 'yaml'
 require 'erb'
-require_relative '.env'
 require 'fileutils'
+require 'digest/md5'
+require 'json'
+
+namespace :assets do
+  desc 'Fingerprint assets while preserving unchanged ones'
+  task :precompile do
+    # First, run your existing build process
+    puts 'Building assets with esbuild and tailwind...'
+    system('npm run build') || raise('Asset build failed')
+
+    puts 'Fingerprinting assets...'
+
+    # Configure paths
+    assets_dir = 'public'
+    manifest_path = "#{assets_dir}/manifest.json"
+
+    # Load existing manifest if it exists
+    old_manifest = File.exist?(manifest_path) ? JSON.parse(File.read(manifest_path)) : {}
+    new_manifest = {}
+
+    # Keeps track of old fingerprinted files we want to remove
+    old_fingerprinted_files = []
+    old_manifest.each_value do |filename|
+      old_fingerprinted_files << "#{assets_dir}/#{filename}"
+    end
+
+    # Process all JS and CSS files
+    Dir.glob("#{assets_dir}/**/*.{css,js}").each do |file|
+      # Skip files that are already fingerprinted
+      next if file =~ /-[a-f0-9]{8}\.(js|css)$/
+
+      # Get relative path from assets_dir
+      rel_path = file.sub("#{assets_dir}/", '')
+
+      # Calculate content hash
+      content_hash = Digest::MD5.file(file).hexdigest[0, 8]
+
+      # Generate fingerprinted name
+      ext = File.extname(file)
+      base_name = File.basename(file, ext)
+      dir_name = File.dirname(rel_path)
+      fingerprinted_name = "#{base_name}-#{content_hash}#{ext}"
+
+      # Full paths
+      fingerprinted_rel_path = dir_name == '.' ? fingerprinted_name : "#{dir_name}/#{fingerprinted_name}"
+      fingerprinted_full_path = "#{assets_dir}/#{fingerprinted_rel_path}"
+
+      # Check if hash changed from previous version
+      if old_manifest[rel_path]
+        old_fingerprinted_path = "#{assets_dir}/#{old_manifest[rel_path]}"
+        if old_fingerprinted_path =~ /-#{content_hash}\.(js|css)$/
+          # Content hasn't changed, keep the old file
+          fingerprinted_rel_path = old_manifest[rel_path]
+          old_fingerprinted_files.delete(old_fingerprinted_path)
+          puts " - #{rel_path} unchanged (keeping #{fingerprinted_rel_path})"
+        else
+          # Content changed, create new fingerprinted file
+          FileUtils.cp(file, fingerprinted_full_path)
+          puts " - #{rel_path} changed → #{fingerprinted_rel_path}"
+        end
+      else
+        # New file, create fingerprinted version
+        FileUtils.cp(file, fingerprinted_full_path)
+        puts " - #{rel_path} → #{fingerprinted_rel_path}"
+      end
+
+      # Add to new manifest
+      new_manifest[rel_path] = fingerprinted_rel_path
+    end
+
+    # Remove old fingerprinted files that aren't used anymore
+    old_fingerprinted_files.each do |old_file|
+      if File.exist?(old_file)
+        File.delete(old_file)
+        puts " - Removed unused #{old_file.sub("#{assets_dir}/", '')}"
+      end
+    end
+
+    # Write updated manifest
+    File.write(manifest_path, JSON.pretty_generate(new_manifest))
+    puts "Asset fingerprinting complete. Manifest updated with #{new_manifest.size} entries."
+  end
+end
+
+require_relative '.env' if ENV['RACK_ENV'] != 'production'
 
 module RakeHelpers
   module_function
@@ -19,7 +103,7 @@ module RakeHelpers
     "postgres://postgres:#{ENV['POSTGRES_PASSWORD']}@#{db_config['host']}/postgres"
   end
 
-  def set_environment(env)
+  def set_environment(env) # rubocop:disable Naming/AccessorMethodName
     ENV['RACK_ENV'] = env || ENV['RACK_ENV'] || 'development'
   end
 
@@ -29,10 +113,10 @@ module RakeHelpers
 
   def underscore(string)
     string.gsub(/::/, '/')
-      .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-      .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-      .tr('-', '_')
-      .downcase
+          .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+          .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+          .tr('-', '_')
+          .downcase
   end
 end
 
@@ -46,7 +130,7 @@ namespace :generate do
     name = args[:name]
     timestamp = RakeHelpers.timestamp
     filename = File.join('config/migrations', "#{timestamp}_#{underscore(name)}.rb")
-    
+
     # Ensure migrations directory exists
     FileUtils.mkdir_p('config/migrations')
 
@@ -96,7 +180,7 @@ namespace :db do
     require_relative './config/database'
     require 'logger'
     Sequel.extension :migration
-    
+
     DB.loggers << Logger.new($stdout) if DB.loggers.empty?
     Sequel::Migrator.apply(DB, 'config/migrations', version)
   end
@@ -127,9 +211,9 @@ namespace :db do
   task :force_reset, [:env] do |_, args|
     set_environment(args[:env])
     require_relative 'config/database'
-    
+
     DB.tables.each { |table| DB.drop_table(table, cascade: true) }
-    
+
     DB.create_table?(:schema_migrations) do
       column :filename, String, null: false
       primary_key [:filename]
@@ -149,21 +233,21 @@ namespace :db do
   %w[test development production].each do |env|
     namespace env do
       desc "Migrate #{env} database to latest version"
-      task(:up)    { Rake::Task['db:migrate'].invoke(env) }
-      
+      task(:up) { Rake::Task['db:migrate'].invoke(env) }
+
       desc "Migrate #{env} database all the way down"
-      task(:down)  { Rake::Task['db:migrate'].invoke(env, 0) }
-      
+      task(:down) { Rake::Task['db:migrate'].invoke(env, 0) }
+
       desc "Migrate #{env} database down and back up"
       task :bounce do
         Rake::Task['db:migrate'].invoke(env, 0)
         Rake::Task['db:migrate'].reenable
         Rake::Task['db:migrate'].invoke(env)
       end
-      
+
       desc "Reset #{env} database (migrate down, up, and seed)"
       task(:reset) { Rake::Task['db:reset'].invoke(env) }
-      
+
       desc "Force reset #{env} database"
       task(:force_reset) { Rake::Task['db:force_reset'].invoke(env) }
     end
@@ -192,16 +276,6 @@ task :console do
   require_relative 'config/application'
   Application.boot
 
-  # Custom formatter that only shows real queries
-  DB.loggers.first.formatter = proc do |severity, datetime, _progname, msg|
-    if msg.is_a?(String) &&
-       !msg.include?('pg_') &&
-       !msg.include?('regclass') &&
-       !msg.include?('server_version')
-      "#{severity}, [#{datetime}] #{msg}\n"
-    end
-  end
-
   require 'irb'
   require 'irb/completion'
 
@@ -216,30 +290,87 @@ task :console do
   IRB.start(__FILE__)
 end
 
-desc 'Display all defined routes'
-task :routes do
-  # Get all ruby files in routes directory
-  route_files = Dir['app/routes/**/*.rb']
+# This Rake task generates Phlex view files with proper namespace structure and optional initialization.
+#
+# Usage:
+#   Without initialization arguments:
+#     rake "generate:phlex[Products::Index]"
+#     # Creates: app/views/products/index_view.rb
+#     # Generated class: Products::IndexView < Phlex::HTML
+#
+#   With initialization arguments (space-separated after the comma):
+#     rake "generate:phlex[Sessions::New,token errors current_user]"
+#     # Creates: app/views/sessions/new_view.rb
+#     # Generated class: Sessions::NewView < Phlex::HTML with initialize(token:, errors:, current_user:)
+#
+# Features:
+#   - Handles nested namespaces (e.g., Admin::Products::Show)
+#   - Creates directory structure automatically
+#   - Adds frozen_string_literal comment
+#   - Proper Ruby indentation
+#   - Optional initialize method with multiple arguments
+#
+# Note:
+#   When using namespaces (::), wrap the rake task in quotes to avoid shell interpretation:
+#   rake "generate:phlex[Admin::Products::Show]"
+#   NOT: rake generate:phlex[Admin::Products::Show]  # This will fail
 
-  # Process each file
-  route_files.each do |file|
-    puts "\n#{file}:"
+namespace :generate do
+  desc 'Generate a Phlex view file'
+  task :phlex, [:view_path, :args] do |_, params|
+    view_path = params[:view_path]
 
-    # Read and parse the file content
-    content = File.read(file)
+    args = params[:args]&.split(/\s+/) || []
 
-    # Find hash_branch definitions
-    content.scan(/hash_branch ["']([^"']+)["']/) do |branch|
-      puts "  /#{branch[0]}"
+    # Extract namespace and view name
+    path_parts = view_path.split('::')
+    view_name = path_parts.pop
+    namespace = path_parts
 
-      # Optionally: scan for nested routes (r.get, r.post etc)
-      content.scan(/r\.(get|post|put|delete|patch) ["']([^"']+)["']/) do |method, path|
-        puts "    #{method.upcase.ljust(6)} /#{branch[0]}#{path}"
-      end
+    # Prepare the file path
+    file_path = %w[app views]
+    file_path.concat(namespace.map(&:downcase))
+    file_path << "#{view_name.downcase}.rb"
+
+    # Create directories if they don't exist
+    FileUtils.mkdir_p(File.dirname(file_path.join('/')))
+
+    # Generate the view content
+    content = ['# frozen_string_literal: true']
+
+    # Add namespace modules
+    namespace.each do |mod|
+      content << "module #{mod}"
     end
+
+    # Start the class definition
+    content << "  class #{view_name} < Phlex::HTML"
+
+    # Add initialize method if args are present
+    if args.any?
+      content << "    def initialize(#{args.map { |arg| "#{arg}:" }.join(', ')})"
+      args.each do |arg|
+        content << "      @#{arg} = #{arg}"
+      end
+      content << '    end'
+    end
+
+    # Add view_template method
+    content << '    def view_template'
+    content << '    end'
+
+    # Close all blocks
+    content << '  end'
+    namespace.size.times { content << 'end' }
+
+    # Write the file
+    File.write(file_path.join('/'), "#{content.join("\n")}\n")
+
+    puts "Created Phlex view at #{file_path.join('/')}"
   end
 end
 
+require 'bundler/setup'
 require 'rake/testtask'
 
 Rake::TestTask.new do |t|

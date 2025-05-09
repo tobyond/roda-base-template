@@ -29,13 +29,8 @@ module Minitest
   end
 end
 
-def extract_csrf_token(response_body)
-  response_body.match(/name="_csrf" value="([^"]+)"/)[1]
-end
-
 def login(email, password = 'password123')
   get '/login'
-  csrf_token = extract_csrf_token(last_response.body)
-  post '/sessions', { _csrf: csrf_token, email:, password: }
+  post '/sessions', { email:, password: }
   assert_equal 302, last_response.status
 end

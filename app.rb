@@ -11,6 +11,8 @@ class MyApp < Roda
   opts[:check_dynamic_arity] = false
   opts[:check_arity] = :warn
 
+  # Nice logging
+  use SemanticLoggerMiddleware
   plugin :default_headers,
     'Content-Type'=>'text/html',
     #'Strict-Transport-Security'=>'max-age=63072000; includeSubDomains', # Uncomment if only allowing https:// access
@@ -27,18 +29,16 @@ class MyApp < Roda
     csp.frame_ancestors :none
   end
 
-  plugin :route_csrf
-  plugin :flash
+
+  # custom implementation, doesn't check in test
+  plugin :routing_csrf, check_header: true
+
+  # enable custom _method hidden input with put/patch/delete etc
+  plugin :method_override
+
   plugin :public
   plugin :Integer_matcher_max
   plugin :typecast_params_sized_integers, :sizes=>[64], :default_size=>64
-
-  logger = if ENV['RACK_ENV'] == 'test'
-    Class.new{def write(_) end}.new
-  else
-    $stderr
-  end
-  plugin :common_logger, logger
 
   plugin :sessions,
     key: '_MyApp.session',
@@ -58,7 +58,7 @@ class MyApp < Roda
     r.hash_branches
 
     r.root do
-      Views::Sessions::New.new(token: csrf_token('/sessions')).call
+      Sessions::New.new(token: csrf_token('/sessions')).call
     end
   end
 end

@@ -10,10 +10,10 @@ class UsersRoutes
           email: r.params['email'],
           password: r.params['password']
         )
-        start_new_session_for(user)
+
+        r.start_new_session_for(user)
         r.redirect '/home'
       rescue Sequel::ValidationFailed
-        flash[:alert] = 'Error signing up'
         r.redirect '/signup'
       end
     end
@@ -21,12 +21,12 @@ class UsersRoutes
 
   MyApp.hash_branch 'signup' do |r|
     r.get do
-      set_current_user
+      r.set_current_user
 
       if current_user
         r.redirect '/home'
       else
-        Views::Users::New.new(token: csrf_token('/users')).call
+        Users::New.new(token: csrf_token('/users')).call
       end
     end
   end

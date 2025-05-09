@@ -6,9 +6,6 @@ require 'sequel/model'
 require_relative 'database'
 require_relative '../.env'
 
-# define namespace
-module Views; end
-
 class Application
   class << self
     attr_reader :loader, :logger, :env
@@ -47,20 +44,36 @@ class Application
     def setup_zeitwerk
       @loader = Zeitwerk::Loader.new
 
-      # Configure paths
-      loader.push_dir(File.join(root, 'app/models'))
-      loader.push_dir(File.join(root, 'app/views'), namespace: Views)
+      # Get all directories in app/ except routes
+      app_dirs = Dir.glob(File.join(root, 'app/*'))
+                    .select { |f| File.directory?(f) }
+                    .reject { |f| f.end_with?('routes') }
 
-      # Enable reloading in development
+      # Push all directories to Zeitwerk
+      app_dirs.each do |dir|
+        loader.push_dir(dir)
+      end
+
       if development?
         require 'listen'
         loader.enable_reloading
         loader.logger = logger
 
-        Listen.to(
-          'app/models',
-          'app/views'
-        ) { loader.reload }.start
+        # Get relative paths for Listen
+        relative_dirs = app_dirs.map { |dir| Pathname.new(dir).relative_path_from(root).to_s }
+
+        Listen.to(*relative_dirs) do |modified, added, removed|
+          loader.reload
+          changes_logging(modified, added, removed)
+        end.start
+
+        # Routes reloading
+        Listen.to('app/routes') do |modified, added, removed|
+          Dir['app/routes/**/*.rb'].each do |route_file|
+            load route_file
+          end
+          changes_logging(modified, added, removed)
+        end.start
       end
 
       loader.setup

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+# Check if foreman is installed
+if ! command -v foreman &> /dev/null; then
+  echo "Foreman is not installed. Installing foreman..."
+  gem install foreman
+fi
+
+# Start the development server using Procfile.dev
+exec foreman start -f Procfile.dev
